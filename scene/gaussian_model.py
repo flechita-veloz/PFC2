@@ -20,7 +20,7 @@ from utils.sh_utils import RGB2SH
 from simple_knn._C import distCUDA2
 from utils.graphics_utils import BasicPointCloud
 from utils.general_utils import strip_symmetric, build_scaling_rotation
-from utils.tonemap_utils import LightnessMapper, ToneMapper, ToneMapper_RGB_combine
+from utils.tonemap_utils import LightnessMapper, ToneMapper, ToneMapper_RGB_combine, ImprovedToneMapper
 
 class GaussianModel:
 
@@ -60,7 +60,10 @@ class GaussianModel:
         self.percent_dense = 0
         self.spatial_lr_scale = 0
         self.lightmapper = LightnessMapper(in_channel=1+lightness_dim).cuda()
-        self.tonemapper = ToneMapper().cuda()
+        # self.tonemapper= ToneMapper().cuda()
+        # self.tonemapper_improved = ImprovedToneMapper().cuda()
+        # self.tonemapper_combine = ToneMapper_RGB_combine().cuda()
+        self.tonemapper= ImprovedToneMapper().cuda()
         self.setup_functions()
         
     def capture(self):
