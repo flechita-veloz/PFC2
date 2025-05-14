@@ -10,6 +10,7 @@
 #
 
 import os
+import time
 import torch
 from random import randint
 from utils.loss_utils import l1_loss, ssim
@@ -88,6 +89,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
+        # Por esta versión corregida:
+        # dummy_lightness = torch.zeros((1, *gt_image.shape[1:])).to('cuda')  # Shape [1,H,W]
+        # Lc0 = l1_loss(gaussians.tonemapper_improved(torch.zeros_like(gt_image).to('cuda'), dummy_lightness), 0.5)
         Lc0 = l1_loss(gaussians.tonemapper(torch.zeros(gt_image.shape).to('cuda')), 0.5)
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image)) + opt.lambda_Lc0  * Lc0
         loss.backward()
@@ -217,7 +221,23 @@ if __name__ == "__main__":
     # Start GUI server, configure and run training
     network_gui.init(args.ip, args.port)
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
+
+    start_time = time.time()
+
+    # python train.py -r 4 -s datasets/dark/piano -m output/piano --port 1111 --eval
     training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from)
+
+    end_time = time.time()
+    elapsed_seconds = end_time - start_time
+
+    # Formatea duración como hh:mm:ss
+    formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_seconds))
+    print(f"\nTraining complete in {formatted_time}.")
+
+    # Guarda duración en archivo dentro de output
+    os.makedirs(args.model_path, exist_ok=True)
+    with open(os.path.join(args.model_path, "training_time.txt"), "w") as f:
+        f.write(f"Training duration: {formatted_time}\nTotal seconds: {elapsed_seconds:.2f}\n")
 
     # All done
     print("\nTraining complete.")

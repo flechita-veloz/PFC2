@@ -49,7 +49,7 @@ def evaluate(model_paths):
             full_dict_polytopeonly[scene_dir] = {}
             per_view_dict_polytopeonly[scene_dir] = {}
 
-            test_dir = Path(scene_dir) / "train"
+            test_dir = Path(scene_dir) / "test"
 
             for method in os.listdir(test_dir):
                 print("Method:", method)
@@ -60,8 +60,8 @@ def evaluate(model_paths):
                 per_view_dict_polytopeonly[scene_dir][method] = {}
 
                 method_dir = test_dir / method
-                gt_dir = method_dir / "gt"
-                renders_dir = method_dir / "renders_con_error"
+                gt_dir = method_dir / "a"
+                renders_dir = method_dir / "b"
                 renders, gts, image_names = readImages(renders_dir, gt_dir)
 
                 ssims = []
@@ -85,9 +85,9 @@ def evaluate(model_paths):
                                                             "PSNR": {name: psnr for psnr, name in zip(torch.tensor(psnrs).tolist(), image_names)},
                                                             "LPIPS": {name: lp for lp, name in zip(torch.tensor(lpipss).tolist(), image_names)}})
 
-            with open(scene_dir + "/results.json", 'w') as fp:
+            with open(scene_dir + "/test/ours_15000/results.json_corregido", 'w') as fp:
                 json.dump(full_dict[scene_dir], fp, indent=True)
-            with open(scene_dir + "/per_view.json", 'w') as fp:
+            with open(scene_dir + "/test/ours_15000/per_view.json_corregido", 'w') as fp:
                 json.dump(per_view_dict[scene_dir], fp, indent=True)
         except:
             print("Unable to compute metrics for model", scene_dir)

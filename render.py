@@ -59,7 +59,7 @@ def render_fps(model_path, name, iteration, views, gaussians, pipeline, backgrou
     }
 
     # Definir el archivo JSON donde se guardarán los resultados
-    json_file_path = os.path.join(fps_path, "fps_data_corregido.json")
+    json_file_path = os.path.join(fps_path, "fps.json")
 
     # Guardar los datos en un archivo JSON
     with open(json_file_path, "w") as json_file:
@@ -71,7 +71,8 @@ def render_fps(model_path, name, iteration, views, gaussians, pipeline, backgrou
     
 
 def render_set(model_path, name, iteration, views, gaussians, pipeline, background):
-    render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders_corregido")
+    # render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders_modificado")
+    render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders_modificado_2")
     gts_path = os.path.join(model_path, name, "ours_{}".format(iteration), "gt")
     lightness_path = os.path.join(model_path, name, "ours_{}".format(iteration), "lightness")
     hdr_path = os.path.join(model_path, name, "ours_{}".format(iteration), "hdr")
@@ -84,32 +85,31 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
     makedirs(lightup_path, exist_ok=True)
 
     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
-        # if(idx != 111):
-        #     continue
+        if(idx != 111):
+            continue
 
+        # render_output = render(view, gaussians, pipeline, background, render_hdr=True, render_lightup=True)
         render_output = render(view, gaussians, pipeline, background, render_hdr=False, render_lightup=False)
-        # render_output = render(view, gaussians, pipeline, background)
 
         # render
         rendering = render_output["render"]
-        # torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
         torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
 
-        # ground trouth
+        # # ground trouth
         # gt = view.original_image[0:3, :, :]
         # torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
 
-        # lightnes map
+        # # lightnes map
         # lightness_map = render_output["lightness_map"] # [1, H, W]
         # lightness_map = lightness_map.permute(1, 2, 0).cpu().numpy() # [H, W, 1]
         # cv2.imwrite(os.path.join(lightness_path, '{0:05d}'.format(idx) + ".exr"), lightness_map)
 
-        # hdr
+        # # hdr
         # hdr_image = render_output["hdr"] # [3, H, W]
         # hdr_image = hdr_image.permute(1, 2, 0).cpu().numpy() # [H, W, 3]
         # cv2.imwrite(os.path.join(hdr_path, '{0:05d}'.format(idx) + ".exr"), hdr_image[..., ::-1])
 
-        # lightup
+        # # lightup
         # lightup_image = render_output["lightup"]
         # torchvision.utils.save_image(lightup_image, os.path.join(lightup_path, '{0:05d}'.format(idx) + ".png"))
 

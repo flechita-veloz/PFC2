@@ -2,9 +2,10 @@ import os
 import subprocess
 
 # Lista de escenas
-escenas = ['tree', 'alley', 'bicycle', 'dormitory', 'fence', 
+# 'tree', 
+escenas = ['alley', 'bicycle', 'dormitory', 'fence', 
            'flower', 'kitchen', 'livingroom', 'snowman', 
-           'staircase', 'street']  # Añade todas las escenas que necesites
+           'staircase', 'street', 'piano']  # Añade todas las escenas que necesites
 
 # Directorio donde están los datasets y las salidas
 dataset_dir = 'datasets/'
@@ -20,7 +21,7 @@ for escena in escenas:
         'python', 'train.py',
         '-r', '4',  # Número de repeticiones
         '-s', os.path.join(dataset_dir, escena),  # Ruta al dataset
-        '-m', os.path.join(output_dir, escena),  # Ruta al output
+        '-m', os.path.join(output_dir, escena + "_improved16"),  # Ruta al output
         '--port', str(port),  # Puerto
         '--eval'  # Evaluación al final
     ]
