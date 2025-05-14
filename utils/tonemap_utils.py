@@ -91,3 +91,59 @@ class ToneMapper_RGB_combine(nn.Module):
 
     def forward(self, input):
         return self.net(input)
+    
+class ImprovedToneMapper(nn.Module):
+    def __init__(self, in_channel=3, hidden_channel=16):
+        super(ImprovedToneMapper, self).__init__()
+        
+        # Red de características
+        self.feature_net = nn.Sequential(
+            nn.Conv2d(in_channel, hidden_channel, 3, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(hidden_channel, hidden_channel, 3, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+        
+        # Red para coeficientes de color
+        self.color_net = nn.Sequential(
+            nn.Conv2d(hidden_channel, hidden_channel, 3, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(hidden_channel, 3, 3, 1, 1),
+            nn.Sigmoid()
+        )
+        
+        # Red para corrección de luz (¡MODIFICADA!)
+        self.light_net = nn.Sequential(
+            nn.Conv2d(2, hidden_channel, 3, 1, 1),  # Ahora espera 2 canales de entrada
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(hidden_channel, 1, 3, 1, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, HDR, lightness_map=None):
+        # Asegurar dimensiones correctas
+        HDR = HDR.unsqueeze(0) if HDR.dim() == 3 else HDR  # [B,3,H,W]
+
+        if lightness_map is None:
+            # Simular mapa plano sin modificación
+            lightness_map = torch.zeros((HDR.shape[0], 1, HDR.shape[2], HDR.shape[3]), device=HDR.device)
+
+        lightness_map = lightness_map.unsqueeze(0) if lightness_map.dim() == 3 else lightness_map  # [B,1,H,W]
+
+        # Procesar características
+        features = self.feature_net(HDR)  # [B,32,H,W]
+        mean_features = features.mean(dim=1, keepdim=True)  # [B,1,H,W]
+        
+        # Preparar entrada para light_net
+        light_input = torch.cat([mean_features, lightness_map], dim=1)  # [B,2,H,W]
+        # print("light_input shape:", light_input.shape)  # Debería ser [1,2,741,996]
+
+        # Procesamiento
+        light_correction = self.light_net(light_input)  # [B,1,H,W]
+        color_coeff = self.color_net(features)  # [B,3,H,W]
+        
+        # Combinar resultados
+        output = HDR * color_coeff * light_correction
+        
+        # Eliminar dimensión batch si era entrada sin batch
+        return torch.clamp(output.squeeze(0), 0, 1) if HDR.dim() == 4 and HDR.shape[0] == 1 else torch.clamp(output, 0, 1)
