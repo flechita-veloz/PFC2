@@ -111,7 +111,7 @@ def render(viewpoint_camera,  pc : GaussianModel, pipe, bg_color : torch.Tensor,
         ISO = torch.log(torch.tensor(viewpoint_camera.ISO * 10))
         f_number = torch.tensor(viewpoint_camera.f_number)
         EV = torch.log(exposure_time) + torch.log(ISO) - 2 * torch.log(f_number)
-        EV *= 2
+        # EV *= 2.0
 
     else:
         print("ablation: wo ISO\n")
@@ -127,31 +127,35 @@ def render(viewpoint_camera,  pc : GaussianModel, pipe, bg_color : torch.Tensor,
         
     
     rendered_image_hdr_relight = rendered_image_hdr + lightness_map
-    rendered_image_sRGB = pc.tonemapper(rendered_image_hdr_relight)
-
-    min_val = torch.amin(lightness_map)
-    max_val = torch.amax(lightness_map)
-    len = max_val - min_val
+    rendered_image_sRGB = pc.tonemapper(rendered_image_hdr_relight, lightness_map) # tonemapper_improved
+    # rendered_image_sRGB = pc.tonemapper(rendered_image_hdr_relight) # tonemapper normal
+    # print("rendered_image_hdr_relight shape:", rendered_image_hdr_relight.shape)
+    # print("rendered_image_hdr shape", rendered_image_hdr.shape)
+    # print("lightness_map shape", lightness_map.shape)
+ 
+    # min_val = torch.amin(lightness_map)
+    # max_val = torch.amax(lightness_map)
+    # len = max_val - min_val
     # print(f"Max val: {max_val}, Min val: {min_val}")
     
-    if max_val < 1.0:
-        # Umbral para identificar fuentes de luz en el lightness_map
-        k = 0.6
-        alpha = min_val + len * k  # Ajusta este valor según sea necesario
-        coord_light_source = torch.nonzero(lightness_map > alpha, as_tuple=False)  # Coordenadas de las fuentes de luz
+    # if max_val < 1.0:
+    #     # Umbral para identificar fuentes de luz en el lightness_map
+    #     k = 0.6
+    #     alpha = min_val + len * k  # Ajusta este valor según sea necesario
+    #     coord_light_source = torch.nonzero(lightness_map > alpha, as_tuple=False)  # Coordenadas de las fuentes de luz
 
-        # Aumentar el brillo en las posiciones identificadas en rendered_image_sRGB
-        brightness_factor = 4.0  # Factor por el cual aumentar el brillo
+    #     # Aumentar el brillo en las posiciones identificadas en rendered_image_sRGB
+    #     brightness_factor = 4.0  # Factor por el cual aumentar el brillo
 
-        # Crear una máscara para aplicar la operación en batch
-        mask = (lightness_map > alpha).expand_as(rendered_image_sRGB)
+    #     # Crear una máscara para aplicar la operación en batch
+    #     mask = (lightness_map > alpha).expand_as(rendered_image_sRGB)
 
-        # Aplicar el factor de brillo con torch.where para evitar bucles
-        rendered_image_sRGB = torch.where(
-            mask, 
-            torch.clamp(rendered_image_sRGB * brightness_factor, 0.0, 1.0),
-            rendered_image_sRGB
-        )
+    #     # Aplicar el factor de brillo con torch.where para evitar bucles
+    #     rendered_image_sRGB = torch.where(
+    #         mask, 
+    #         torch.clamp(rendered_image_sRGB * brightness_factor, 0.0, 1.0),
+    #         rendered_image_sRGB
+    #     )
 
 
     hdr = None
